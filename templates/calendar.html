@@ -14,9 +14,11 @@
 				<h1>Calendar</h1>
 				
 				<div class="header-nav">
-					<button class="add-event-btn">
-						+ Add Event
-					</button>
+					<a href = {{ url_for("add_event") }}>
+						<button class="add-event-btn">
+							+ Add Event
+						</button>
+					</a>
 					
 					<a href= {{url_for("homepage")}}>
 						<button class="add-event-btn">
@@ -52,9 +54,13 @@
 				<main class="calendar-container">
 
 					<div class="month-bar">
-						<button>&lt;</button>
-						<h2>September 2026</h2>
-						<button>&gt;</button>
+						<a class= "shift_week" href = {{ url_for('display_calendar', offset = offset-1)}}>
+							<button>&lt;</button>
+						</a>
+						<h2>{{ title }}</h2>
+						<a class = "shift_week" href = {{ url_for('display_calendar', offset = offset+1)}}>
+							<button>&gt;</button>
+						</a>
 					</div>
 
 					<div class="weekdays">
@@ -68,23 +74,25 @@
 					</div>
 
 					<div class="calendar-grid">
+						{% for day in week %}
 
 						<div class="day">
-							<div class="day-number">1</div>
-						</div>
 
-						<div class="day">
-							<div class="day-number">2</div>
-
-							<div class="event-pill meeting">
-								Team Meeting
+							<div class="day-number">
+								{{ day.day }}
 							</div>
+
+							{% for event in events.get(day.strftime("%Y-%m-%d"), []) %}
+
+								<div class="event-pill">
+									{{ event[0] }}
+								</div>
+
+							{% endfor %}
+
 						</div>
 
-						<div class="day">
-							<div class="day-number">3</div>
-						</div>
-
+						{% endfor %}
 					</div>
 
 				</main>
