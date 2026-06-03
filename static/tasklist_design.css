@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Inter", sans-serif;
+    background-color: #DAC6AE;
+    min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 44px;
+}
+
+.page-title {
+    font-size: 36px;
+    font-weight: bold;
+    color: black;
+    margin: 0;
+}
+
+.header-nav {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.home-link {
+    color: #888;
+    font-size: 19px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: "Inter";
+    background-color: #694E2E;
+    padding: 14px 28px;
+    border-radius: 30px;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+/* ── Board ── */
+.board {
+    display: flex;
+    gap: 36px;
+    padding: 10px 55px 60px;
+    align-items: flex-start;
+}
+
+.column {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── Column headers ── */
+.column-header {
+    font-size: 20px;
+    font-weight: bold;
+    padding: 13px 28px;
+    border-radius: 50px;
+    margin-bottom: 24px;
+    display: inline-block;
+}
+
+.low-header    { background-color: #C8F0DC; color: #1a1a1a; }
+.medium-header { background-color: #FFE8C0; color: #1a1a1a; }
+.high-header   { background-color: #FFD8D8; color: #1a1a1a; }
+
+/* ── Cards container ── */
+.cards {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 80px;
+    border-radius: 8px;
+    padding: 4px;
+    transition: background 0.15s;
+}
+
+.cards.drag-over {
+    background: rgba(0, 0, 0, 0.06);
+    outline: 2px dashed rgba(0, 0, 0, 0.18);
+    outline-offset: 2px;
+}
+
+/* ── Task card ── */
+.task-card {
+    position: relative;
+    background-color: #FAFAC8;
+    border-radius: 4px 4px 0 4px;
+    padding: 14px 16px 32px 16px;
+    box-shadow: 3px 4px 12px rgba(0, 0, 0, 0.18);
+    cursor: grab;
+    user-select: none;
+}
+
+.task-card.dragging {
+    opacity: 0.35;
+    cursor: grabbing;
+}
+
+.task-card:active {
+    cursor: grabbing;
+}
+
+/* Fold: page-background triangle at bottom-right makes the corner look peeled back */
+.task-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(to top left, #DAC6AE 50%, transparent 50%);
+    pointer-events: none;
+}
+
+/* ── Status badge ── */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.82);
+    border-radius: 20px;
+    padding: 4px 10px 4px 8px;
+    margin-bottom: 10px;
+}
+
+.status-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background-color: #AAAAAA;
+}
+
+/* Dot colour updates via CSS :has() when the select changes */
+.task-card:has(.status-select option[value="Not started"]:checked) .status-dot {
+    background-color: #AAAAAA;
+}
+.task-card:has(.status-select option[value="In progress"]:checked) .status-dot {
+    background-color: #F5A623;
+}
+.task-card:has(.status-select option[value="Completed"]:checked) .status-dot {
+    background-color: #4CAF50;
+}
+
+.status-select {
+    border: none;
+    background: transparent;
+    font-family: "Inter";
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    outline: none;
+    padding: 0;
+    user-select: auto;
+}
+
+/* ── Card content ── */
+.card-title {
+    font-size: 17px;
+    font-weight: bold;
+    color: #1a1a1a;
+    margin: 6px 0 6px;
+    line-height: 1.35;
+}
+
+.card-details {
+    font-size: 13px;
+    color: #555;
+    margin: 0;
+    line-height: 1.45;
+}
+
+.card-creator {
+    font-size: 12px;
+    color: #555;
+    font-style: italic;
+    margin: 18px 0 0;
+}

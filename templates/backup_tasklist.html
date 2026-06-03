@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>To Do List</title>
+    <link rel="stylesheet" href="/static/tasklist_design.css">
+</head>
+<body>
+    <div class="header">
+        <h1 class="page-title">To Do List</h1>
+        <div class="header-nav">
+            <a class="home-link" href={{ url_for("homepage") }}>Home</a>
+            <a class="button" href={{ url_for("createtask") }}>Create Task</a>
+        </div>
+    </div>
+
+    <div class="board">
+
+        <!-- Low Priority -->
+		<div class="column">
+			<div class="column-header medium-header">Low Priority</div>
+			<div class="cards">
+				{% for task in low %}
+				<div class="task-card" draggable="true">
+					<div class="status-badge">
+						<span class="status-dot"></span>
+						<select class="status-select">
+							<option value="not-started" selected>Not started</option>
+							<option value="in-progress">In progress</option>
+							<option value="completed">Completed</option>
+						</select>
+					</div>
+					<h3 class="card-title">{{ task[0] }}</h3>
+					<p class="card-details">{{ task[3] }}</p>
+					<p class="card-creator">Created by: {{ task[2] }}</p>
+					<p class="card-creator">Assigned to: {{ task[1] }}</p>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+		
+		<!-- Medium Priority -->
+		<div class="column">
+			<div class="column-header low-header">Medium Priority</div>
+			<div class="cards">
+				{% for task in medium %}
+				<div class="task-card" draggable="true">
+					<div class="status-badge">
+						<span class="status-dot"></span>
+						<select class="status-select">
+							<option value="not-started" selected>Not started</option>
+							<option value="in-progress">In progress</option>
+							<option value="completed">Completed</option>
+						</select>
+					</div>
+					<h3 class="card-title">{{ task[0] }}</h3>
+					<p class="card-details">{{ task[3] }}</p>
+					<p class="card-creator">Created by: {{ task[2] }}</p>
+					<p class="card-creator">Assigned to: {{ task[1] }}</p>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+
+		<!-- High Priority -->
+		<div class="column">
+			<div class="column-header high-header">High Priority</div>
+			<div class="cards">
+				{% for task in high %}
+				<div class="task-card" draggable="true">
+					<div class="status-badge">
+						<span class="status-dot"></span>
+						<select class="status-select">
+							<option value="not-started" selected>Not started</option>
+							<option value="in-progress">In progress</option>
+							<option value="completed">Completed</option>
+						</select>
+					</div>
+					<h3 class="card-title">{{ task[0] }}</h3>
+					<p class="card-details">{{ task[3] }}</p>
+					<p class="card-creator">Created by: {{ task[2] }}</p>
+					<p class="card-creator">Assigned to: {{ task[1] }}</p>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+
+    </div>
+
+    <script>
+        let dragged = null;
+
+        document.querySelectorAll('.task-card').forEach(card => {
+            card.addEventListener('dragstart', () => {
+                dragged = card;
+                setTimeout(() => card.classList.add('dragging'), 0);
+            });
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                dragged = null;
+                document.querySelectorAll('.cards').forEach(z => z.classList.remove('drag-over'));
+            });
+        });
+
+        document.querySelectorAll('.status-select').forEach(sel => {
+            sel.addEventListener('mousedown', e => e.stopPropagation());
+        });
+
+        document.querySelectorAll('.cards').forEach(zone => {
+            zone.addEventListener('dragover', e => {
+                e.preventDefault();
+                if (!dragged) return;
+                zone.classList.add('drag-over');
+                const after = getInsertBefore(zone, e.clientY);
+                if (after) zone.insertBefore(dragged, after);
+                else zone.appendChild(dragged);
+            });
+            zone.addEventListener('dragleave', e => {
+                if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over');
+            });
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+            });
+        });
+
+        function getInsertBefore(container, y) {
+            return [...container.querySelectorAll('.task-card:not(.dragging)')].reduce((closest, card) => {
+                const { top, height } = card.getBoundingClientRect();
+                const offset = y - top - height / 2;
+                return offset < 0 && offset > closest.offset ? { offset, element: card } : closest;
+            }, { offset: -Infinity }).element;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+
+<html>
+
+	<head>
+		<title> Calendar </title>
+		<link rel="stylesheet" href = "/static/calendar_design.css">
+	</head>
+	
+	<body>
+		<div class="calendar-page">
+
+			<div class="calendar-header">
+				<h1>Calendar</h1>
+				
+				<div class="header-nav">
+					<button class="add-event-btn">
+						+ Add Event
+					</button>
+					
+					<a href= {{url_for("homepage")}}>
+						<button class="add-event-btn">
+							Home
+						</button>
+					</a>
+				</div>
+			</div>
+
+			<div class="calendar-layout">
+
+				<aside class="sidebar">
+
+					<h2>Upcoming</h2>
+
+					<div class="event-preview">
+						<span class="event-dot meeting"></span>
+						Team Meeting
+					</div>
+
+					<div class="event-preview">
+						<span class="event-dot deadline"></span>
+						Project Deadline
+					</div>
+
+					<div class="event-preview">
+						<span class="event-dot personal"></span>
+						Birthday Dinner
+					</div>
+
+				</aside>
+
+				<main class="calendar-container">
+
+					<div class="month-bar">
+						<button>&lt;</button>
+						<h2>September 2026</h2>
+						<button>&gt;</button>
+					</div>
+
+					<div class="weekdays">
+						<div>Sun</div>
+						<div>Mon</div>
+						<div>Tue</div>
+						<div>Wed</div>
+						<div>Thu</div>
+						<div>Fri</div>
+						<div>Sat</div>
+					</div>
+
+					<div class="calendar-grid">
+
+						<div class="day">
+							<div class="day-number">1</div>
+						</div>
+
+						<div class="day">
+							<div class="day-number">2</div>
+
+							<div class="event-pill meeting">
+								Team Meeting
+							</div>
+						</div>
+
+						<div class="day">
+							<div class="day-number">3</div>
+						</div>
+
+					</div>
+
+				</main>
+
+			</div>
+
+		</div>
+	</body>
+
+</html>
