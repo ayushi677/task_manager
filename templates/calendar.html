@@ -25,31 +25,15 @@
 							Home
 						</button>
 					</a>
+					
+					<button class="add-event-btn">
+						Plan Tasks
+					</button>
 				</div>
 			</div>
 
 			<div class="calendar-layout">
 
-				<aside class="sidebar">
-
-					<h2>Upcoming</h2>
-
-					<div class="event-preview">
-						<span class="event-dot meeting"></span>
-						Team Meeting
-					</div>
-
-					<div class="event-preview">
-						<span class="event-dot deadline"></span>
-						Project Deadline
-					</div>
-
-					<div class="event-preview">
-						<span class="event-dot personal"></span>
-						Birthday Dinner
-					</div>
-
-				</aside>
 
 				<main class="calendar-container">
 
@@ -63,36 +47,69 @@
 						</a>
 					</div>
 
-					<div class="weekdays">
-						<div>Sun</div>
-						<div>Mon</div>
-						<div>Tue</div>
-						<div>Wed</div>
-						<div>Thu</div>
-						<div>Fri</div>
-						<div>Sat</div>
-					</div>
+					
 
-					<div class="calendar-grid">
+					<div class="week-view">
+
+						<!-- Top-left empty corner -->
+						<div class="corner"></div>
+
+						<!-- Day headers -->
 						{% for day in week %}
-
-						<div class="day">
-
-							<div class="day-number">
+							<div class="day-header">
+								{{ day.strftime("%a") }}
+								<br>
 								{{ day.day }}
 							</div>
+						{% endfor %}
 
-							{% for event in events.get(day.strftime("%Y-%m-%d"), []) %}
-
-								<div class="event-pill">
-									{{ event[0] }}
+						<!-- Time labels -->
+						<div class="time-column">
+							{% for hour in hours %}
+								<div class="hour-label">
+									{{ hour }}
 								</div>
-
 							{% endfor %}
-
 						</div>
 
+						<!-- Day columns -->
+						{% for day in week %}
+
+							<div class="day-column">
+
+								<!-- Hour grid lines -->
+								{% for hour in hours %}
+									<div class="hour-slot"></div>
+								{% endfor %}
+
+								<!-- Events -->
+								{% for event in events.get(day.strftime("%Y-%m-%d"), []) %}
+
+									<div
+										class="event-block"
+
+										data-title="{{ event.title }}"
+										data-date="{{ event.date }}"
+										data-start="{{ event.start }}"
+										data-end="{{ event.end }}"
+										data-details="{{ event.details }}"
+
+										onclick="showEvent(this)"
+
+										style="
+											top: {{ event.top }}px;
+											height: {{ event.height }}px;
+										"
+									>
+										{{ event.title }}
+									</div>
+
+								{% endfor %}
+
+							</div>
+
 						{% endfor %}
+
 					</div>
 
 				</main>
@@ -100,6 +117,65 @@
 			</div>
 
 		</div>
+		
+		<div id="eventModal" class="modal">
+
+			<div class="modal-content">
+
+				<span class="close">&times;</span>
+
+				<h2 id="modalTitle"></h2>
+
+				<p><strong>Date:</strong> <span id="modalDate"></span></p>
+
+				<p><strong>Start:</strong> <span id="modalStart"></span></p>
+
+				<p><strong>End:</strong> <span id="modalEnd"></span></p>
+
+				<p><strong>Details:</strong></p>
+				<p id="modalDetails"></p>
+
+			</div>
+
+		</div>
 	</body>
 
 </html>
+
+<script>
+
+function showEvent(element) {
+
+    document.getElementById("modalTitle").textContent =
+        element.dataset.title;
+
+    document.getElementById("modalDate").textContent =
+        element.dataset.date;
+
+    document.getElementById("modalStart").textContent =
+        element.dataset.start;
+
+    document.getElementById("modalEnd").textContent =
+        element.dataset.end;
+
+    document.getElementById("modalDetails").textContent =
+        element.dataset.details;
+
+    document.getElementById("eventModal").style.display = "block";
+}
+
+document.querySelector(".close").onclick = function() {
+    document.getElementById("eventModal").style.display = "none";
+};
+
+window.onclick = function(event) {
+
+    const modal =
+        document.getElementById("eventModal");
+
+    if (event.target === modal) {
+        modal.style.display = "none";
+    }
+};
+
+</script>
