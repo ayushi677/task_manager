@@ -251,3 +251,93 @@ body {
         font-size: 11px;
     }
 }
+
+.week-view {
+    display: grid;
+    grid-template-columns: 80px repeat(7, 1fr);
+}
+
+.corner {
+    height: 50px;
+}
+
+.day-header {
+    text-align: center;
+    font-weight: bold;
+    padding: 10px;
+    background: #FAFAC8;
+}
+
+.time-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.hour-label {
+    height: 60px;
+    font-size: 12px;
+    color: #666;
+}
+
+.day-column {
+    position: relative;
+    height: 1440px;   /* 24 × 60 minutes */
+    border-left: 1px solid #ddd;
+}
+
+.hour-slot {
+    height: 60px;
+    border-top: 1px solid #eee;
+}
+
+.event-block {
+    position: absolute;
+
+    left: 4px;
+    right: 4px;
+
+    background: #9FC5FF;
+    border-radius: 8px;
+
+    padding: 4px;
+
+    overflow: hidden;
+}
+
+.modal {
+    display: none;
+
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0,0,0,0.4);
+
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #FAFAC8;
+
+    width: 500px;
+
+    margin: 100px auto;
+
+    padding: 30px;
+
+    border-radius: 20px;
+
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.close {
+    float: right;
+
+    font-size: 28px;
+
+    cursor: pointer;
+}
