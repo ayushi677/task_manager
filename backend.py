@@ -43,10 +43,10 @@ def update_priority(ID, priority):
     conn.commit()
     conn.close()
 
-def create_event(title, date, start, end, details):
+def create_event(title, date, start, end, details, category, due_date):
     conn = sqlite3.connect("tasks.db")
-    conn.execute("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, title, date, start, end, details)")
-    conn.execute("INSERT INTO events(title, date, start, end, details) VALUES (?,?,?,?,?)", (title, date, start, end, details))
+    conn.execute("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, title, date, start, end, category, due_date, details)")
+    conn.execute("INSERT INTO events(title, date, start, end, details, category, due_date) VALUES (?,?,?,?,?)", (title, date, start, end, details, category, due_date))
     conn.commit()
     conn.close()
     
@@ -72,7 +72,7 @@ def curr_events():
     week_end_str = (week_start + timedelta(days=6)).strftime("%Y-%m-%d")
     
     conn = sqlite3.connect("tasks.db")
-    events = conn.execute("SELECT title, date, start, end FROM events WHERE date >= ? AND date <= ? ORDER BY date, start", (week_start_str, week_end_str)).fetchall()
+    events = conn.execute("SELECT title, date, start, end, details FROM events WHERE date >= ? AND date <= ? ORDER BY date, start", (week_start_str, week_end_str)).fetchall()
     conn.close()
     
     events_by_date = {}
@@ -81,8 +81,46 @@ def curr_events():
         if event_date not in events_by_date:
             events_by_date[event_date] = []
         events_by_date[event_date].append(event)
+
+    processed_events = {}
+
+    for event in events:
+
+        title = event[0]
+        date = event[1]
+        start = event[2]
+        end = event[3]
+        details = event[4]
+       
+        start_dt = datetime.strptime(start, "%H:%M")
+        end_dt = datetime.strptime(end, "%H:%M")
+
+        start_minutes = (
+            start_dt.hour * 60 +
+            start_dt.minute
+        )
+
+        end_minutes = (
+            end_dt.hour * 60 +
+            end_dt.minute
+        )
+
+        processed_event = {
+            "title": title,
+            "date": date,
+            "start": start,
+            "end": end,
+            "details": details,
+            "top": start_minutes,
+            "height": end_minutes - start_minutes
+        }
+
+        if date not in processed_events:
+            processed_events[date] = []
+
+        processed_events[date].append(processed_event)
         
-    return events_by_date
+    return processed_events
     
 
 app = Flask(__name__)
@@ -129,10 +167,11 @@ def update_priority_route():
 
 @app.route("/calendar/")
 def display_calendar():
+    hours = [f"{i:02d}:00" for i in range(24)]
     offset = int(request.args.get("offset", 0))
     week, title = curr_week(offset)
     events = curr_events()
-    return render_template("calendar.html", week = week, events = events, title = title, offset = offset)
+    return render_template("calendar.html", hours = hours, week = week, events = events, title = title, offset = offset)
 
 @app.route("/addEvent/", methods = ["GET", "POST"])
 def add_event():
