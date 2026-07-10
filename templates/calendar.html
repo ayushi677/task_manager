@@ -1,0 +1,981 @@
+<!doctype html>
+
+<html>
+
+	<head>
+		<title> Calendar </title>
+		<link rel="stylesheet" href = "/static/calendar_design.css">
+	</head>
+	
+	<body>
+		<div class="calendar-page">
+
+			<div class="calendar-header">
+				<h1>Calendar</h1>
+				
+				<div class="header-nav">
+					<a href = {{ url_for("add_event") }}>
+						<button class="add-event-btn">
+							+ Add Event
+						</button>
+					</a>
+					
+					<a href= {{url_for("homepage")}}>
+						<button class="add-event-btn">
+							Home
+						</button>
+					</a>
+					
+					<button class="add-event-btn" id="planBtn">
+						Plan Tasks
+					</button>
+				</div>
+			</div>
+			
+
+			<div class="calendar-layout">
+			
+				<div id="planner-panel">
+
+					<h3>Tasks</h3>
+
+					<button
+						type="button"
+						class="add-event-btn optimize-btn"
+						id="optimizeBtn"
+					>
+						Optimise Schedule
+					</button>
+
+					{% for task in tasks %}
+
+					<div
+						class="planner-task"
+						draggable="true"
+
+						data-id="{{ task[0] }}"
+						data-duration="{{ task[2] }}"
+					>
+
+						{{ task[1] }}
+
+						<small>{{ task[2] }} min</small>
+
+					</div>
+
+					{% endfor %}
+
+				</div>
+
+
+				<main class="calendar-container">
+
+					<div class="month-bar">
+						<a class= "shift_week" href = {{ url_for('display_calendar', offset = offset-1)}}>
+							<button>&lt;</button>
+						</a>
+						<h2>{{ title }}</h2>
+						<a class = "shift_week" href = {{ url_for('display_calendar', offset = offset+1)}}>
+							<button>&gt;</button>
+						</a>
+					</div>
+
+					
+
+					<div class="week-view">
+
+						<!-- Top-left empty corner -->
+						<div class="corner"></div>
+
+						<!-- Day headers -->
+						{% for day in week %}
+							<div class="day-header">
+								{{ day.strftime("%a") }}
+								<br>
+								{{ day.day }}
+							</div>
+						{% endfor %}
+
+						<!-- Time labels -->
+						<div class="time-column">
+							{% for hour in hours %}
+								<div class="hour-label">
+									{{ hour }}
+								</div>
+							{% endfor %}
+						</div>
+
+						<!-- Day columns -->
+						{% for day in week %}
+
+							<div class="day-column" data-date="{{ day.strftime('%Y-%m-%d') }}">
+
+								<!-- Hour grid lines -->
+								{% for hour in hours %}
+									<div
+										class="hour-slot"
+
+										data-date="{{ day.strftime('%Y-%m-%d') }}"
+
+										data-time="{{ hour }}"
+									>
+									</div>
+								{% endfor %}
+
+								<!-- Events -->
+								{% for event in events.get(day.strftime("%Y-%m-%d"), []) %}
+
+									<div
+										class="event-block"
+
+										data-id="{{ event.id }}"
+										data-title="{{ event.title }}"
+										data-date="{{ event.date }}"
+										data-start="{{ event.start }}"
+										data-end="{{ event.end }}"
+										data-details="{{ event.details }}"
+
+										onclick="showEvent(this)"
+
+										style="
+											top: {{ event.top }}px;
+											height: {{ event.height }}px;
+										"
+									>
+										{{ event.title }}
+									</div>
+
+								{% endfor %}
+
+								<!-- Scheduled tasks -->
+								{% for task in scheduled_tasks.get(day.strftime("%Y-%m-%d"), []) %}
+
+									<div
+										class="task-block"
+
+										data-id="{{ task.id }}"
+										data-title="{{ task.title }}"
+										data-assignedto="{{ task.assignedTo }}"
+										data-createdby="{{ task.createdBy }}"
+										data-details="{{ task.details }}"
+										data-priority="{{ task.priority }}"
+										data-status="{{ task.status }}"
+										data-duedate="{{ task.due_date }}"
+										data-duration="{{ task.duration }}"
+										data-date="{{ task.date }}"
+										data-start="{{ task.start }}"
+										data-end="{{ task.end }}"
+
+										onclick="showTask(this)"
+
+										style="
+											top: {{ task.top }}px;
+											height: {{ task.height }}px;
+										"
+									>
+										{{ task.title }}
+									</div>
+
+								{% endfor %}
+
+							</div>
+
+						{% endfor %}
+
+					</div>
+
+				</main>
+
+			</div>
+
+		</div>
+		
+		<div id="eventModal" class="modal">
+
+    <div class="modal-content">
+
+		<button
+			class="close-btn"
+			onclick="closeModal()"
+		>
+			×
+		</button>
+
+        <h2>Edit Event</h2>
+
+        <input type="hidden" id="eventId">
+
+        <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="modalTitle" disabled>
+        </div>
+
+        <div class="row">
+
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="modalDate" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>Start</label>
+                <input type="time" id="modalStart" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>End</label>
+                <input type="time" id="modalEnd" disabled>
+            </div>
+
+        </div>
+
+        <div class="form-group">
+            <label>Details</label>
+            <textarea
+                id="modalDetails"
+                rows="5"
+                disabled
+            ></textarea>
+        </div>
+
+        <div class="modal-buttons">
+
+            <button
+                type="button"
+                id="editBtn"
+                class="edit-btn"
+            >
+                Edit
+            </button>
+
+            <button
+                type="button"
+                id="saveBtn"
+                class="save-btn"
+                style="display:none;"
+            >
+                Save
+            </button>
+
+            <form
+                method="POST"
+                action="{{ url_for('delete_event') }}"
+                onsubmit="return confirm('Delete event?')"
+            >
+
+                <input
+                    type="hidden"
+                    id="deleteEventId"
+                    name="id"
+                >
+
+                <button
+                    type="submit"
+                    class="delete-btn"
+                >
+                    Delete
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="taskModal" class="modal">
+
+    <div class="modal-content">
+
+		<button
+			class="close-btn"
+			onclick="closeTaskModal()"
+		>
+			×
+		</button>
+
+        <h2>Task Details</h2>
+
+        <input type="hidden" id="taskModalId">
+
+        <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="taskModalTitle" disabled>
+        </div>
+
+        <div class="row">
+
+            <div class="form-group">
+                <label>Assigned To</label>
+                <input type="text" id="taskModalAssignedTo" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>Created By</label>
+                <input type="text" id="taskModalCreatedBy" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" id="taskModalDueDate" disabled>
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="form-group">
+                <label>Duration (min)</label>
+                <input type="number" id="taskModalDuration" min="1" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>Priority</label>
+                <select id="taskModalPriority" disabled>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Status</label>
+                <select id="taskModalStatus" disabled>
+                    <option value="Not started">Not started</option>
+                    <option value="In progress">In progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+
+        </div>
+
+        <div class="form-group">
+            <label>Details</label>
+            <textarea
+                id="taskModalDetails"
+                rows="5"
+                disabled
+            ></textarea>
+        </div>
+
+        <p id="taskModalScheduledInfo" class="scheduled-info"></p>
+
+        <div class="modal-buttons">
+
+            <button
+                type="button"
+                id="taskEditBtn"
+                class="edit-btn"
+            >
+                Edit
+            </button>
+
+            <button
+                type="button"
+                id="taskSaveBtn"
+                class="save-btn"
+                style="display:none;"
+            >
+                Save
+            </button>
+
+            <button
+                type="button"
+                id="taskUnscheduleBtn"
+                class="delete-btn"
+            >
+                Unschedule
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+function showEvent(element) {
+
+    document.getElementById("eventId").value =
+        element.dataset.id;
+
+    document.getElementById("deleteEventId").value =
+        element.dataset.id;
+
+    document.getElementById("modalTitle").value =
+        element.dataset.title;
+
+    document.getElementById("modalDate").value =
+        element.dataset.date;
+
+    document.getElementById("modalStart").value =
+        element.dataset.start;
+
+    document.getElementById("modalEnd").value =
+        element.dataset.end;
+
+    document.getElementById("modalDetails").value =
+        element.dataset.details;
+
+    document.getElementById("eventModal").style.display =
+        "flex";
+}
+
+document.getElementById("editBtn").onclick = function() {
+
+    document.getElementById("modalTitle").disabled = false;
+
+    document.getElementById("modalDate").disabled = false;
+
+    document.getElementById("modalStart").disabled = false;
+
+    document.getElementById("modalEnd").disabled = false;
+
+    document.getElementById("modalDetails").disabled = false;
+
+    document.getElementById("saveBtn").style.display =
+        "inline-block";
+};
+
+document.getElementById("saveBtn").onclick =
+async function() {
+
+    const response = await fetch(
+        "/update_event/",
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body: JSON.stringify({
+
+                id:
+                    document.getElementById("eventId").value,
+
+                title:
+                    document.getElementById("modalTitle").value,
+
+                date:
+                    document.getElementById("modalDate").value,
+
+                start:
+                    document.getElementById("modalStart").value,
+
+                end:
+                    document.getElementById("modalEnd").value,
+
+                details:
+                    document.getElementById("modalDetails").value
+
+            })
+        }
+    );
+
+    location.reload();
+};
+
+function closeModal() {
+    document.getElementById("eventModal").style.display = "none";
+}
+
+window.onclick = function(event) {
+
+    const eventModal =
+        document.getElementById("eventModal");
+
+    const taskModal =
+        document.getElementById("taskModal");
+
+    if (event.target === eventModal) {
+        eventModal.style.display = "none";
+    }
+
+    if (event.target === taskModal) {
+        taskModal.style.display = "none";
+    }
+};
+
+// ------------------------
+// Task detail / edit modal
+// ------------------------
+
+let currentTaskBlock = null;
+
+function showTask(element) {
+
+    currentTaskBlock = element;
+
+    document.getElementById("taskModalId").value = element.dataset.id;
+    document.getElementById("taskModalTitle").value = element.dataset.title;
+    document.getElementById("taskModalAssignedTo").value = element.dataset.assignedto;
+    document.getElementById("taskModalCreatedBy").value = element.dataset.createdby;
+    document.getElementById("taskModalDueDate").value = element.dataset.duedate;
+    document.getElementById("taskModalDuration").value = element.dataset.duration;
+    document.getElementById("taskModalPriority").value = element.dataset.priority;
+    document.getElementById("taskModalStatus").value = element.dataset.status;
+    document.getElementById("taskModalDetails").value = element.dataset.details;
+
+    document.getElementById("taskModalScheduledInfo").textContent =
+        `Scheduled: ${element.dataset.date} · ${element.dataset.start}–${element.dataset.end}`;
+
+    setTaskModalEditable(false);
+
+    document.getElementById("taskModal").style.display = "flex";
+}
+
+function closeTaskModal() {
+    document.getElementById("taskModal").style.display = "none";
+    currentTaskBlock = null;
+}
+
+function setTaskModalEditable(editable) {
+
+    [
+        "taskModalTitle",
+        "taskModalAssignedTo",
+        "taskModalCreatedBy",
+        "taskModalDueDate",
+        "taskModalDuration",
+        "taskModalPriority",
+        "taskModalStatus",
+        "taskModalDetails"
+    ].forEach(id => document.getElementById(id).disabled = !editable);
+
+    document.getElementById("taskEditBtn").style.display = editable ? "none" : "inline-block";
+    document.getElementById("taskSaveBtn").style.display = editable ? "inline-block" : "none";
+}
+
+document.getElementById("taskEditBtn").onclick = function () {
+    setTaskModalEditable(true);
+};
+
+document.getElementById("taskSaveBtn").onclick = async function () {
+
+    const payload = {
+        id: document.getElementById("taskModalId").value,
+        title: document.getElementById("taskModalTitle").value,
+        assignedTo: document.getElementById("taskModalAssignedTo").value,
+        createdBy: document.getElementById("taskModalCreatedBy").value,
+        due_date: document.getElementById("taskModalDueDate").value,
+        duration: document.getElementById("taskModalDuration").value,
+        priority: document.getElementById("taskModalPriority").value,
+        status: document.getElementById("taskModalStatus").value,
+        details: document.getElementById("taskModalDetails").value
+    };
+
+    const response = await fetch("/update_task/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        alert(data.error || "Could not save this task.");
+        return;
+    }
+
+    location.reload();
+};
+
+document.getElementById("taskUnscheduleBtn").onclick = async function () {
+
+    if (!planning) {
+        alert("Turn on Plan Tasks mode to move this task back to the list.");
+        return;
+    }
+
+    if (!confirm("Move this task back to the task list?")) return;
+
+    await fetch("/unschedule_task/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            id: document.getElementById("taskModalId").value
+        })
+    });
+
+    location.reload();
+};
+
+// ------------------------
+// Sidebar / planning mode
+// (persisted across reloads so it doesn't
+// close every time a task is scheduled)
+// ------------------------
+
+const PLANNING_KEY = "calendarPlanningOpen";
+
+let planning = localStorage.getItem(PLANNING_KEY) === "1";
+
+function setPlanningMode(isPlanning) {
+
+    planning = isPlanning;
+
+    document.getElementById("planner-panel").style.display =
+        planning ? "block" : "none";
+
+    // Scheduled tasks are only draggable/clickable ("edit mode")
+    // while the sidebar is open. When it's closed they're fixed.
+    document.querySelectorAll(".task-block").forEach(block => {
+        block.draggable = planning;
+        block.classList.toggle("locked", !planning);
+    });
+
+    localStorage.setItem(PLANNING_KEY, planning ? "1" : "0");
+}
+
+document.getElementById("planBtn").onclick = function () {
+    setPlanningMode(!planning);
+};
+
+// Apply the restored state on page load
+setPlanningMode(planning);
+
+// ------------------------
+// Optimise Schedule
+// Auto-places every unscheduled task at the best
+// available time (around events, other tasks, and
+// sleeping hours), respecting each task's due date.
+// Placed tasks remain freely movable afterwards,
+// same as any other scheduled task in plan mode.
+// ------------------------
+
+document.getElementById("optimizeBtn").onclick = async function () {
+
+    const btn = this;
+    const originalLabel = btn.textContent;
+
+    btn.disabled = true;
+    btn.textContent = "Optimising…";
+
+    try {
+
+        const response = await fetch("/optimize_schedule/", {
+            method: "POST"
+        });
+
+        if (!response.ok) {
+            alert("Something went wrong while optimising the schedule.");
+            btn.disabled = false;
+            btn.textContent = originalLabel;
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.unscheduled && data.unscheduled.length > 0) {
+            const names = data.unscheduled
+                .map(t => t.title)
+                .join(", ");
+            alert(
+                "Everything else was scheduled. These tasks couldn't fit " +
+                "before their due date and are still in the task list: " +
+                names
+            );
+        }
+
+        location.reload();
+
+    } catch (err) {
+        alert("Something went wrong while optimising the schedule.");
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+    }
+};
+
+let draggedTask = null;
+
+// ------------------------
+// Make planner tasks draggable
+// ------------------------
+
+document.querySelectorAll(".planner-task").forEach(task => {
+
+    task.addEventListener("dragstart", function (e) {
+
+        draggedTask = this;
+
+        e.dataTransfer.setData("text/plain", this.dataset.id);
+
+        e.dataTransfer.effectAllowed = "move";
+
+    });
+
+    task.addEventListener("dragend", function () {
+
+        preview.style.display = "none";
+
+        draggedTask = null;
+        lastDragClientY = null;
+
+    });
+
+});
+
+// ------------------------
+// Make already-scheduled tasks re-draggable
+// while in edit mode (sidebar open)
+// ------------------------
+
+document.querySelectorAll(".task-block").forEach(block => {
+
+    block.addEventListener("dragstart", function (e) {
+
+        if (!planning) {
+            e.preventDefault();
+            return;
+        }
+
+        draggedTask = this;
+
+        e.dataTransfer.setData("text/plain", this.dataset.id);
+
+        e.dataTransfer.effectAllowed = "move";
+
+    });
+
+    block.addEventListener("dragend", function () {
+
+        preview.style.display = "none";
+
+        draggedTask = null;
+        lastDragClientY = null;
+
+    });
+
+});
+
+// ------------------------
+// Register calendar slots
+// ------------------------
+
+document.querySelectorAll(".hour-slot").forEach(slot => {
+
+    slot.addEventListener("dragover", dragOver);
+
+    slot.addEventListener("dragleave", dragLeave);
+
+    slot.addEventListener("drop", dropTask);
+
+});
+
+// ------------------------
+// Preview block
+// ------------------------
+
+const preview = document.createElement("div");
+
+preview.className = "preview";
+
+preview.style.display = "none";
+
+document.body.appendChild(preview);
+
+// ------------------------
+// Dragging over calendar
+// ------------------------
+
+function dragOver(e) {
+
+    if (!planning || !draggedTask) return;
+
+    e.preventDefault();
+
+    const duration = parseInt(draggedTask.dataset.duration);
+
+    const slot = e.currentTarget;
+    const column = slot.parentElement;
+
+    const slotRect = slot.getBoundingClientRect();
+    const columnRect = column.getBoundingClientRect();
+
+    preview.style.display = "block";
+
+    preview.style.height =
+        slotRect.height * duration / 60 + "px";
+
+    preview.style.width =
+        columnRect.width - 8 + "px";
+
+    preview.style.left =
+        columnRect.left + window.scrollX + 4 + "px";
+
+    preview.style.top =
+        slotRect.top + window.scrollY + "px";
+
+}
+
+function dragLeave() {
+
+    preview.style.display = "none";
+
+}
+
+// ------------------------
+// Auto-scroll the page while dragging
+// near the top/bottom edge of the screen,
+// so later hours (only visible after
+// scrolling) can be reached while dragging.
+// ------------------------
+
+let lastDragClientY = null;
+
+document.addEventListener("dragover", function (e) {
+
+    if (!draggedTask) return;
+
+    lastDragClientY = e.clientY;
+
+}, true);
+
+const AUTOSCROLL_EDGE = 90;   // px from top/bottom that triggers scrolling
+const AUTOSCROLL_MAX_SPEED = 22; // px per tick at the very edge
+
+setInterval(function () {
+
+    if (!draggedTask || lastDragClientY === null) return;
+
+    const viewportHeight = window.innerHeight;
+
+    if (lastDragClientY < AUTOSCROLL_EDGE) {
+
+        const strength = (AUTOSCROLL_EDGE - lastDragClientY) / AUTOSCROLL_EDGE;
+        window.scrollBy(0, -AUTOSCROLL_MAX_SPEED * strength);
+
+    } else if (lastDragClientY > viewportHeight - AUTOSCROLL_EDGE) {
+
+        const strength =
+            (lastDragClientY - (viewportHeight - AUTOSCROLL_EDGE)) / AUTOSCROLL_EDGE;
+        window.scrollBy(0, AUTOSCROLL_MAX_SPEED * strength);
+
+    }
+
+}, 20);
+
+// ------------------------
+// Drop task (schedule a new task,
+// or reschedule an already-scheduled one)
+// ------------------------
+
+function dropTask(e) {
+
+    if (!planning || !draggedTask) return;
+
+    e.preventDefault();
+
+    preview.style.display = "none";
+
+    const slot = e.currentTarget;
+
+    const id = draggedTask.dataset.id;
+    const date = slot.dataset.date;
+    const start = slot.dataset.time;
+
+    fetch("/schedule_task/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            id,
+            date,
+            start
+        })
+    })
+    .then(async response => {
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            alert(
+                data.error ||
+                "This time overlaps with an existing event or task."
+            );
+            return;
+        }
+
+        location.reload();
+
+    });
+
+}
+
+// ------------------------
+// Keep the page scrolled to where the
+// user was working after a reload, instead
+// of always jumping back to the top.
+// ------------------------
+
+const SCROLL_KEY = "calendarScrollY";
+
+window.addEventListener("beforeunload", function () {
+    sessionStorage.setItem(SCROLL_KEY, window.scrollY);
+});
+
+const savedScrollY = sessionStorage.getItem(SCROLL_KEY);
+
+if (savedScrollY !== null) {
+    window.scrollTo(0, parseInt(savedScrollY, 10));
+} else {
+    // Default view starts around 5am instead of midnight,
+    // since most people aren't scheduling things overnight.
+    const weekView = document.querySelector(".week-view");
+    if (weekView) {
+        const DEFAULT_START_HOUR = 5;
+        const target =
+            weekView.getBoundingClientRect().top +
+            window.scrollY +
+            (DEFAULT_START_HOUR * 60) -
+            20;
+        window.scrollTo(0, Math.max(0, target));
+    }
+}
+
+// ------------------------
+// Current time indicator
+// (red line across today's column, Google-Calendar style)
+// ------------------------
+
+function updateCurrentTimeLine() {
+
+    document.querySelectorAll(".current-time-line").forEach(el => el.remove());
+
+    const now = new Date();
+
+    const todayStr =
+        now.getFullYear() + "-" +
+        String(now.getMonth() + 1).padStart(2, "0") + "-" +
+        String(now.getDate()).padStart(2, "0");
+
+    const column = document.querySelector(`.day-column[data-date="${todayStr}"]`);
+
+    if (!column) return;
+
+    const minutes = now.getHours() * 60 + now.getMinutes();
+
+    const line = document.createElement("div");
+    line.className = "current-time-line";
+    line.style.top = minutes + "px";
+
+    column.appendChild(line);
+}
+
+updateCurrentTimeLine();
+setInterval(updateCurrentTimeLine, 60000);
+
+
+</script>
+
+	</body>
+
+</html>

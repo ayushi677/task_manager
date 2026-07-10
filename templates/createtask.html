@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Task</title>
+    <link rel="stylesheet" href="/static/createtask_design.css">
+</head>
+
+<body>
+    <div class="header">
+        <h1 class="todolist">To Do List</h1>
+    </div>
+
+    <form class="createtodo" method="POST">
+        <h2 class="titleoftodo">Create To-Do</h2>
+
+        <div class="tasktitle">
+            <h2>Task Title:</h2>
+            <input class="field" type="text" placeholder="Title..." name="title" required>
+        </div>
+
+        <div class="assignedto">
+            <h2>Assigned To:</h2>
+            <input class="field" type="text" placeholder="Person..." name="assignedTo">
+        </div>
+
+        <div class="createdby">
+            <h2>Created By:</h2>
+            <input class="field" type="text" placeholder="Person..." name="createdBy">
+        </div>
+
+        <div class="taskdetails">
+            <h2>Task Details:</h2>
+            <input class="field" type="text" placeholder="Description..." name="details">
+        </div>
+		
+		<div class="extra-fields">
+
+			<div class="field-group">
+				<h2>Due Date:</h2>
+				<input type="date" name="due_date" class="extra-input">
+			</div>
+
+			<div class="field-group">
+				<h2>Estimated Duration:</h2>
+				
+				<select name="duration" class="extra-input">
+					<option value="15">15 minutes</option>
+					<option value="30">30 minutes</option>
+					<option value="45">45 minutes</option>
+					<option value="60" selected>1 hour</option>
+					<option value="90">1½ hours</option>
+					<option value="120">2 hours</option>
+					<option value="180">3 hours</option>
+				</select>
+				
+			</div>
+
+		</div>
+		
+		
+		<div id="buttonID">
+			<button class="search" type="submit">Create!</button>
+		</div>
+
+    </form>
+
+</body>

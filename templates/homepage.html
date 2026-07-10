@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>To Do List</title>
+    <link rel="stylesheet" href="/static/homepage_design.css">
+</head>
+
+<body>
+    <div class="header">
+        <h1 class="todolist">To Do List</h1>
+		
+		<div class="header-nav">
+			<a href={{ url_for("createtask") }}>
+				<button class="button">Create Task</button>
+			</a>
+			<a href={{ url_for("view_tasks") }}>
+				<button class="button">View All Tasks</button>
+			</a>
+			<a href={{ url_for("display_calendar") }}>
+				<button class="button">Calendar</button>
+			</a>
+		</div>
+    </div>
+
+    <h1 class="welcome">Welcome!</h1>
+    <h2 class="started">Let's get started.</h2>
+
+    <form class="navigation" method="GET" action="{{ url_for('view_tasks') }}">
+        <input
+			list="assignees"
+			name="person"
+			autocomplete="off"
+			placeholder="Search person"
+		>
+
+		<datalist id="assignees">
+
+			{% for person in assignees %}
+				<option value="{{ person }}">
+			{% endfor %}
+
+		</datalist>
+        <button class="search" type="submit">Search</button>
+    </form>
+
+
+</body>
+</html>

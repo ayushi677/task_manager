@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>To Do List</title>
+    <link rel="stylesheet" href="/static/tasklist_design.css">
+</head>
+<body>
+    <div class="header">
+        <h1 class="page-title">
+            {% if person %}Tasks for {{ person }}{% else %}All Tasks{% endif %}
+        </h1>
+        <div class="header-nav">
+            <a class="home-link" href={{ url_for("homepage") }}>Home</a>
+            <a class="button" href={{ url_for("createtask") }}>Create Task</a>
+        </div>
+    </div>
+
+    {% macro task_card(task) %}
+    <div
+        class="task-card"
+        draggable="true"
+        data-id="{{ task[0] }}"
+        data-title="{{ task[1] }}"
+        data-assignedto="{{ task[2] }}"
+        data-createdby="{{ task[3] }}"
+        data-details="{{ task[4] }}"
+        data-priority="{{ task[5] }}"
+        data-status="{{ task[6] }}"
+        data-duedate="{{ task[7] }}"
+        data-duration="{{ task[8] }}"
+        data-scheduled="{{ task[12] }}"
+        data-scheduleddate="{{ task[9] or '' }}"
+        data-scheduledstart="{{ task[10] or '' }}"
+        data-scheduledend="{{ task[11] or '' }}"
+    >
+
+        <div class="card-top">
+
+            <div class="status-badge">
+                <span class="status-dot"></span>
+
+                <select
+                    class="status-select"
+                    data-id="{{ task[0] }}"
+                >
+                    <option value="Not started"
+                        {% if task[6] == "Not started" %}selected{% endif %}>
+                        Not started
+                    </option>
+
+                    <option value="In progress"
+                        {% if task[6] == "In progress" %}selected{% endif %}>
+                        In progress
+                    </option>
+
+                    <option value="Completed"
+                        {% if task[6] == "Completed" %}selected{% endif %}>
+                        Completed
+                    </option>
+                </select>
+            </div>
+
+            <div class="card-actions">
+                <button type="button" class="edit-task-btn" title="Edit">&#9998;</button>
+                <button type="button" class="delete-btn" title="Delete">&times;</button>
+            </div>
+
+        </div>
+
+        <h3 class="card-title">{{ task[1] }}</h3>
+        <p class="card-details">{{ task[4] }}</p>
+        <p class="card-creator">Created by: {{ task[3] }}</p>
+        <p class="card-creator">Assigned to: {{ task[2] }}</p>
+        <p class="card-meta">Due: {{ task[7] }}</p>
+        <p class="card-meta">Duration: {{ task[8] }} min</p>
+
+        {% if task[12] %}
+        <p class="card-schedule-status is-scheduled">
+            Scheduled: {{ task[9] }} &middot; {{ task[10] }}&ndash;{{ task[11] }}
+        </p>
+        {% else %}
+        <p class="card-schedule-status is-unscheduled">Not scheduled</p>
+        {% endif %}
+
+    </div>
+    {% endmacro %}
+
+    <div class="board">
+
+        <!-- Low Priority -->
+        <div class="column">
+            <div class="column-header low-header">Low Priority</div>
+            <div class="cards" data-priority="Low">
+                {% for task in low %}
+                    {{ task_card(task) }}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Medium Priority -->
+        <div class="column">
+            <div class="column-header medium-header">Medium Priority</div>
+            <div class="cards" data-priority="Medium">
+                {% for task in medium %}
+                    {{ task_card(task) }}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- High Priority -->
+        <div class="column">
+            <div class="column-header high-header">High Priority</div>
+            <div class="cards" data-priority="High">
+                {% for task in high %}
+                    {{ task_card(task) }}
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Task detail / edit modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+
+            <button class="close-btn" type="button" id="taskModalCloseBtn">&times;</button>
+
+            <h2>Task Details</h2>
+
+            <input type="hidden" id="taskModalId">
+
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="taskModalTitle" disabled>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Assigned To</label>
+                    <input type="text" id="taskModalAssignedTo" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label>Created By</label>
+                    <input type="text" id="taskModalCreatedBy" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label>Due Date</label>
+                    <input type="date" id="taskModalDueDate" disabled>
+                </div>
+            </div>
+
+            <div class="row two-col">
+                <div class="form-group">
+                    <label>Duration (min)</label>
+                    <input type="number" id="taskModalDuration" min="1" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label>Priority</label>
+                    <input type="text" id="taskModalPriority" disabled>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Details</label>
+                <textarea id="taskModalDetails" rows="5" disabled></textarea>
+            </div>
+
+            <p id="taskModalScheduledInfo" class="scheduled-info"></p>
+
+            <div class="modal-buttons">
+                <button type="button" id="taskEditBtn" class="edit-btn">Edit</button>
+                <button type="button" id="taskSaveBtn" class="save-btn" style="display:none;">Save</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let dragged = null;
+        let currentTaskCard = null;
+
+        document.querySelectorAll('.task-card').forEach(card => {
+            card.addEventListener('dragstart', () => {
+                dragged = card;
+                setTimeout(() => card.classList.add('dragging'), 0);
+            });
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                dragged = null;
+                document.querySelectorAll('.cards').forEach(z => z.classList.remove('drag-over'));
+            });
+        });
+
+        // Buttons and the status dropdown shouldn't trigger a card drag
+        document.querySelectorAll('.status-select, .edit-task-btn, .delete-btn').forEach(el => {
+            el.addEventListener('mousedown', e => e.stopPropagation());
+        });
+
+        document.querySelectorAll('.cards').forEach(zone => {
+            zone.addEventListener('dragover', e => {
+                e.preventDefault();
+                if (!dragged) return;
+                zone.classList.add('drag-over');
+                const after = getInsertBefore(zone, e.clientY);
+                if (after) zone.insertBefore(dragged, after);
+                else zone.appendChild(dragged);
+            });
+            zone.addEventListener('dragleave', e => {
+                if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over');
+            });
+            zone.addEventListener('drop', async e => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+
+                if (!dragged) return;
+
+                const taskId = dragged.dataset.id;
+                const newPriority = zone.dataset.priority;
+
+                dragged.dataset.priority = newPriority;
+
+                await fetch('/update_priority/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: taskId,
+                        priority: newPriority
+                    })
+                });
+            });
+        });
+
+        function getInsertBefore(container, y) {
+            return [...container.querySelectorAll('.task-card:not(.dragging)')].reduce((closest, card) => {
+                const { top, height } = card.getBoundingClientRect();
+                const offset = y - top - height / 2;
+                return offset < 0 && offset > closest.offset ? { offset, element: card } : closest;
+            }, { offset: -Infinity }).element;
+        }
+
+        document.querySelectorAll('.status-select').forEach(select => {
+            select.addEventListener('change', async function() {
+                await fetch('/update_status/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: this.dataset.id,
+                        status: this.value
+                    })
+                });
+                const card = this.closest('.task-card');
+                if (card) card.dataset.status = this.value;
+            });
+        });
+
+        // ------------------------
+        // Delete (no reload — just removes the card)
+        // ------------------------
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const card = this.closest('.task-card');
+                if (!card) return;
+                if (!confirm('Delete this task?')) return;
+
+                const response = await fetch('/delete_task/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: card.dataset.id })
+                });
+
+                if (response.ok) {
+                    card.remove();
+                } else {
+                    alert('Could not delete this task.');
+                }
+            });
+        });
+
+        // ------------------------
+        // View / edit modal (no reload)
+        // ------------------------
+
+        function setTaskModalEditable(editable) {
+            ['taskModalTitle', 'taskModalAssignedTo', 'taskModalCreatedBy',
+             'taskModalDueDate', 'taskModalDuration', 'taskModalDetails']
+                .forEach(id => document.getElementById(id).disabled = !editable);
+
+            document.getElementById('taskEditBtn').style.display = editable ? 'none' : 'inline-block';
+            document.getElementById('taskSaveBtn').style.display = editable ? 'inline-block' : 'none';
+        }
+
+        function openTaskModal(card) {
+            currentTaskCard = card;
+
+            document.getElementById('taskModalId').value = card.dataset.id;
+            document.getElementById('taskModalTitle').value = card.dataset.title;
+            document.getElementById('taskModalAssignedTo').value = card.dataset.assignedto;
+            document.getElementById('taskModalCreatedBy').value = card.dataset.createdby;
+            document.getElementById('taskModalDueDate').value = card.dataset.duedate;
+            document.getElementById('taskModalDuration').value = card.dataset.duration;
+            document.getElementById('taskModalPriority').value = card.dataset.priority;
+            document.getElementById('taskModalDetails').value = card.dataset.details;
+
+            const info = document.getElementById('taskModalScheduledInfo');
+            if (card.dataset.scheduled === "1") {
+                info.textContent =
+                    `Scheduled: ${card.dataset.scheduleddate} · ${card.dataset.scheduledstart}–${card.dataset.scheduledend}`;
+            } else {
+                info.textContent = 'Not scheduled yet';
+            }
+
+            setTaskModalEditable(false);
+            document.getElementById('taskModal').style.display = 'flex';
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').style.display = 'none';
+            currentTaskCard = null;
+        }
+
+        document.querySelectorAll('.edit-task-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                openTaskModal(this.closest('.task-card'));
+            });
+        });
+
+        document.getElementById('taskModalCloseBtn').onclick = closeTaskModal;
+
+        document.getElementById('taskEditBtn').onclick = function() {
+            setTaskModalEditable(true);
+        };
+
+        document.getElementById('taskSaveBtn').onclick = async function() {
+
+            const payload = {
+                id: document.getElementById('taskModalId').value,
+                title: document.getElementById('taskModalTitle').value,
+                assignedTo: document.getElementById('taskModalAssignedTo').value,
+                createdBy: document.getElementById('taskModalCreatedBy').value,
+                due_date: document.getElementById('taskModalDueDate').value,
+                duration: document.getElementById('taskModalDuration').value,
+                details: document.getElementById('taskModalDetails').value
+            };
+
+            const response = await fetch('/update_task/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                alert(data.error || 'Could not save this task.');
+                return;
+            }
+
+            if (currentTaskCard) {
+                currentTaskCard.dataset.title = payload.title;
+                currentTaskCard.dataset.assignedto = payload.assignedTo;
+                currentTaskCard.dataset.createdby = payload.createdBy;
+                currentTaskCard.dataset.details = payload.details;
+                currentTaskCard.dataset.duedate = payload.due_date;
+                currentTaskCard.dataset.duration = payload.duration;
+
+                currentTaskCard.querySelector('.card-title').textContent = payload.title;
+                currentTaskCard.querySelector('.card-details').textContent = payload.details;
+
+                const creatorLines = currentTaskCard.querySelectorAll('.card-creator');
+                creatorLines[0].textContent = `Created by: ${payload.createdBy}`;
+                creatorLines[1].textContent = `Assigned to: ${payload.assignedTo}`;
+
+                const metaLines = currentTaskCard.querySelectorAll('.card-meta');
+                metaLines[0].textContent = `Due: ${payload.due_date}`;
+                metaLines[1].textContent = `Duration: ${payload.duration} min`;
+
+                // Keep the scheduled info line in sync if this task is on the calendar
+                if (currentTaskCard.dataset.scheduled === "1") {
+                    const scheduleLine = currentTaskCard.querySelector('.card-schedule-status');
+                    if (scheduleLine) {
+                        scheduleLine.textContent =
+                            `Scheduled: ${currentTaskCard.dataset.scheduleddate} · ${currentTaskCard.dataset.scheduledstart}–${currentTaskCard.dataset.scheduledend}`;
+                    }
+                }
+            }
+
+            closeTaskModal();
+        };
+
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('taskModal');
+            if (e.target === modal) closeTaskModal();
+        });
+    </script>
+</body>
+</html>
